@@ -8,15 +8,26 @@ public class Main {
     public static final int WINDOW_HEIGHT = 700;
 
     public static void main(String[] args) {
-        JFrame window = new JFrame("Dining Philosophers Problem");
+        JFrame window = new JFrame("בעיית הפילוסופים הסועדים");
 
         DiningPanel diningPanel = new DiningPanel(5);
 
         JTextField numberField = new JTextField("5", 4);
-        JButton updateButton = new JButton("Update");
+        numberField.setHorizontalAlignment(JTextField.CENTER);
 
+        JButton updateButton = new JButton("עדכן");
+
+        JLabel titleLabel = new JLabel("מספר צלחות:");
         JLabel messageLabel = new JLabel("טווח מותר: 2 עד 30");
+
         messageLabel.setForeground(new Color(120, 0, 0));
+
+        Font font = new Font("Arial", Font.BOLD, 15);
+
+        titleLabel.setFont(font);
+        numberField.setFont(font);
+        updateButton.setFont(font);
+        messageLabel.setFont(font);
 
         updateButton.addActionListener(e -> {
             String input = numberField.getText();
@@ -54,8 +65,10 @@ public class Main {
             messageLabel.setText("טווח מותר: 2 עד 30");
         });
 
-        JPanel topPanel = new JPanel();
-        topPanel.add(new JLabel("Number of plates:"));
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        topPanel.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+
+        topPanel.add(titleLabel);
         topPanel.add(numberField);
         topPanel.add(updateButton);
         topPanel.add(messageLabel);
