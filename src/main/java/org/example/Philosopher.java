@@ -1,6 +1,6 @@
 package org.example;
 
-public class Philosopher extends Thread {
+public class Philosopher implements Runnable {
     private int id;
     private Waiter waiter;
     private DiningPanel diningPanel;
@@ -49,7 +49,6 @@ public class Philosopher extends Thread {
         }
 
         eat();
-
         waiter.finishEating(id);
     }
 

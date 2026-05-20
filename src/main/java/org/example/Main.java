@@ -7,6 +7,9 @@ public class Main {
     public static final int WINDOW_WIDTH = 900;
     public static final int WINDOW_HEIGHT = 700;
 
+    private static final int MIN_DINERS = 2;
+    private static final int MAX_DINERS = 20;
+
     public static void main(String[] args) {
         JFrame window = new JFrame("בעיית הפילוסופים הסועדים");
 
@@ -18,7 +21,7 @@ public class Main {
         JButton updateButton = new JButton("עדכן");
 
         JLabel titleLabel = new JLabel("מספר צלחות:");
-        JLabel messageLabel = new JLabel("טווח מותר: 2 עד 30");
+        JLabel messageLabel = new JLabel("טווח מותר: " + MIN_DINERS + " עד " + MAX_DINERS);
 
         messageLabel.setForeground(new Color(120, 0, 0));
 
@@ -51,18 +54,18 @@ public class Main {
                 return;
             }
 
-            if (count > 30) {
-                messageLabel.setText("הקלדת מעל הטווח, הטווח המותר הוא 2 עד 30");
+            if (count > MAX_DINERS) {
+                messageLabel.setText("הקלדת מעל הטווח, הטווח המותר הוא " + MIN_DINERS + " עד " + MAX_DINERS);
                 return;
             }
 
-            if (count < 2) {
-                messageLabel.setText("הקלדת מתחת לטווח, הטווח המותר הוא 2 עד 30");
+            if (count < MIN_DINERS) {
+                messageLabel.setText("הקלדת מתחת לטווח, הטווח המותר הוא " + MIN_DINERS + " עד " + MAX_DINERS);
                 return;
             }
 
             diningPanel.setDinersCount(count);
-            messageLabel.setText("טווח מותר: 2 עד 30");
+            messageLabel.setText("טווח מותר: " + MIN_DINERS + " עד " + MAX_DINERS);
         });
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));

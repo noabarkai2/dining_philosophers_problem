@@ -63,7 +63,7 @@ public class Plate {
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, fontSize));
 
-        FontMetrics metrics = g.getFontMetrics();
+        FontMetrics metrics = g.getFontMetrics(); //איפה למקם טקסט כדי שיהיה באמצע
         int textX = centerX - metrics.stringWidth(text) / 2;
 
         g.drawString(text, textX, y);

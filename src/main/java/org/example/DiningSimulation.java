@@ -17,7 +17,8 @@ public class DiningSimulation {
         System.out.println("Simulation started");
 
         for (int i = 0; i < philosophers.length; i++) {
-            philosophers[i].start();
+            Thread thread = new Thread(philosophers[i]);
+            thread.start();
         }
     }
 
