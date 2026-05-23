@@ -63,7 +63,7 @@ public class Plate {
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, fontSize));
 
-        FontMetrics metrics = g.getFontMetrics(); //איפה למקם טקסט כדי שיהיה באמצע
+        FontMetrics metrics = g.getFontMetrics();
         int textX = centerX - metrics.stringWidth(text) / 2;
 
         g.drawString(text, textX, y);
@@ -74,8 +74,20 @@ public class Plate {
             return "Eating";
         }
 
-        if (state == PhilosopherState.HUNGRY) {
-            return "Hungry";
+        if (state == PhilosopherState.WAITING_FOR_LEFT_FORK) {
+            return "Waiting left fork";
+        }
+
+        if (state == PhilosopherState.WAITING_FOR_RIGHT_FORK) {
+            return "Waiting right fork";
+        }
+
+        if (state == PhilosopherState.WAITING_FOR_BOTH_FORKS) {
+            return "Waiting both forks";
+        }
+
+        if (state == PhilosopherState.STOPPED) {
+            return "Stopped";
         }
 
         return "Thinking";
@@ -86,8 +98,20 @@ public class Plate {
             return new Color(0, 150, 70);
         }
 
-        if (state == PhilosopherState.HUNGRY) {
+        if (state == PhilosopherState.WAITING_FOR_LEFT_FORK) {
             return new Color(230, 130, 0);
+        }
+
+        if (state == PhilosopherState.WAITING_FOR_RIGHT_FORK) {
+            return new Color(210, 160, 0);
+        }
+
+        if (state == PhilosopherState.WAITING_FOR_BOTH_FORKS) {
+            return new Color(200, 90, 0);
+        }
+
+        if (state == PhilosopherState.STOPPED) {
+            return new Color(160, 40, 40);
         }
 
         return new Color(80, 80, 80);

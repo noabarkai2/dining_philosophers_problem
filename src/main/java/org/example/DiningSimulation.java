@@ -32,6 +32,21 @@ public class DiningSimulation {
         waiter.stopWaiter();
     }
 
+    public void stopOnePhilosopher(int philosopherNumber) {
+        int index = philosopherNumber - 1;
+
+        if (index < 0 || index >= philosophers.length) {
+            return;
+        }
+
+        philosophers[index].stopPhilosopher();
+        waiter.stopOnePhilosopher(index);
+    }
+
+    public int getPhilosophersCount() {
+        return philosophers.length;
+    }
+
     public PhilosopherState getPhilosopherState(int index) {
         return philosophers[index].getStateOfPhilosopher();
     }

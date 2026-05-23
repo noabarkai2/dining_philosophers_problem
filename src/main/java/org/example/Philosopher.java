@@ -24,7 +24,6 @@ public class Philosopher implements Runnable {
                 break;
             }
 
-            becomeHungry();
             tryToEat();
         }
 
@@ -33,18 +32,15 @@ public class Philosopher implements Runnable {
 
     private void think() {
         setPhilosopherState(PhilosopherState.THINKING);
-        Utils.sleepRandom(1000, 3000);
-    }
-
-    private void becomeHungry() {
-        setPhilosopherState(PhilosopherState.HUNGRY);
+        Utils.sleepRandom(1000, 1500);
     }
 
     private void tryToEat() {
-        boolean allowedToEat = waiter.askToEat(id);
+        setPhilosopherState(PhilosopherState.WAITING_FOR_BOTH_FORKS);
+
+        boolean allowedToEat = waiter.askToEat(this);
 
         if (!allowedToEat || !isRunning()) {
-            System.out.println("Philosopher " + id + " did not get permission to eat");
             return;
         }
 
@@ -56,18 +52,19 @@ public class Philosopher implements Runnable {
         setPhilosopherState(PhilosopherState.EATING);
         System.out.println("Philosopher " + id + " is EATING");
 
-        Utils.sleepRandom(1000, 3000);
+        Utils.sleepRandom(1500, 2500);
     }
 
     public synchronized void stopPhilosopher() {
         running = false;
+        setPhilosopherState(PhilosopherState.STOPPED);
     }
 
     private synchronized boolean isRunning() {
         return running;
     }
 
-    private synchronized void setPhilosopherState(PhilosopherState state) {
+    public synchronized void setPhilosopherState(PhilosopherState state) {
         this.state = state;
         diningPanel.updateScreen();
     }
