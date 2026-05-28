@@ -3,46 +3,44 @@ package org.example;
 import java.awt.*;
 
 public class DiningTable {
-    private static final int TABLE_SIZE = 500;
-    private static final int TABLE_CENTER_Y_OFFSET = 20;
+    private static int TABLE_SIZE = 450;
+    private static int TABLE_CENTER_Y_OFFSET = 0;
 
-    private static final int PLATE_DISTANCE_FROM_TABLE_EDGE = 35;
+    private static int PLATE_SIZE = 64;
+    private static int PLATE_DISTANCE_FROM_TABLE_EDGE = 35;
 
-    private static final int FREE_FORK_DISTANCE_FROM_TABLE_EDGE = 120;
-    private static final int TAKEN_FORK_SHIFT_TOWARD_PLATE = 18;
+    private static int FREE_FORK_DISTANCE_FROM_TABLE_EDGE = 115;
+    private static int TAKEN_FORK_SHIFT_TOWARD_PLATE = 18;
 
-    private static final int LARGE_PLATE_SIZE = 70;
-    private static final int MEDIUM_PLATE_SIZE = 50;
-    private static final int SMALL_PLATE_SIZE = 35;
+    private static int PHILOSOPHER_HEAD_SIZE = 22;
+    private static int PHILOSOPHER_BODY_WIDTH = 28;
+    private static int PHILOSOPHER_BODY_HEIGHT = 34;
+    private static int PHILOSOPHER_DISTANCE_FROM_TABLE = 22;
 
-    private static final int PHILOSOPHER_HEAD_SIZE = 22;
-    private static final int PHILOSOPHER_BODY_WIDTH = 28;
-    private static final int PHILOSOPHER_BODY_HEIGHT = 34;
-    private static final int PHILOSOPHER_DISTANCE_FROM_TABLE = 40;
+    private static int INNER_TABLE_PADDING = 35;
+    private static int TABLE_BORDER_WIDTH = 4;
 
-    private static final int INNER_TABLE_PADDING = 35;
-    private static final int TABLE_BORDER_WIDTH = 4;
+    private static int LEGEND_X = 20;
+    private static int LEGEND_START_Y = 25;
+    private static int LEGEND_GAP_Y = 25;
 
-    private static final int LEGEND_X = 20;
-    private static final int LEGEND_START_Y = 25;
-    private static final int LEGEND_GAP_Y = 25;
+    private static int FREE_FORK_OWNER = -1;
 
-    private static final int FREE_FORK_OWNER = -1;
+    private static Color FREE_FORK_COLOR = new Color(180, 180, 180);
+    private static Color THINKING_COLOR = new Color(80, 80, 80);
+    private static Color WAITING_BOTH_COLOR = new Color(200, 90, 0);
+    private static Color EATING_COLOR = new Color(0, 150, 70);
+    private static Color STOPPED_COLOR = new Color(160, 40, 40);
 
-    private static final Color FREE_FORK_COLOR = new Color(180, 180, 180);
-    private static final Color THINKING_COLOR = new Color(80, 80, 80);
-    private static final Color WAITING_COLOR = new Color(230, 130, 0);
-    private static final Color EATING_COLOR = new Color(0, 150, 70);
-    private static final Color STOPPED_COLOR = new Color(160, 40, 40);
-    private static final float GOLDEN_RATIO = 0.61803398875f;
-    private static final float PASTEL_SATURATION = 0.35f;
-    private static final float PASTEL_BRIGHTNESS = 0.95f;
+    private static float GOLDEN_RATIO = 0.61803398875f;
+    private static float PASTEL_SATURATION = 0.35f;
+    private static float PASTEL_BRIGHTNESS = 0.95f;
 
-    private final int dinersCount;
-    private final DiningSimulation simulation;
+    private int dinersCount;
+    private DiningSimulation simulation;
 
-    private final Plate plate;
-    private final Fork fork;
+    private Plate plate;
+    private Fork fork;
 
     public DiningTable(int dinersCount, DiningSimulation simulation) {
         this.dinersCount = dinersCount;
@@ -63,9 +61,8 @@ public class DiningTable {
 
         double angleStep = 2 * Math.PI / dinersCount;
 
-        int plateSize = calculatePlateSize();
         int plateDistanceFromCenter =
-                tableRadius - plateSize / 2 - PLATE_DISTANCE_FROM_TABLE_EDGE;
+                tableRadius - PLATE_SIZE / 2 - PLATE_DISTANCE_FROM_TABLE_EDGE;
 
         for (int i = 0; i < dinersCount; i++) {
             double plateAngle = -Math.PI / 2 + i * angleStep;
@@ -77,16 +74,39 @@ public class DiningTable {
             PhilosopherState state = simulation.getPhilosopherState(i);
             int mealsCount = simulation.getMealsCount(i);
 
-            drawPhilosopher(g, centerX, centerY, tableRadius, plateAngle, philosopherColor, state, i + 1);
+            drawPhilosopher(
+                    g,
+                    centerX,
+                    centerY,
+                    tableRadius,
+                    plateAngle,
+                    philosopherColor,
+                    state,
+                    i + 1
+            );
 
-            int firstFork = (i - 1 + dinersCount) % dinersCount;
-            int secondFork = i;
-
-            plate.draw(g, plateX, plateY, i + 1, philosopherColor, plateSize, state, mealsCount);
+            plate.draw(
+                    g,
+                    plateX,
+                    plateY,
+                    i + 1,
+                    philosopherColor,
+                    PLATE_SIZE,
+                    state,
+                    mealsCount
+            );
         }
 
         for (int i = 0; i < dinersCount; i++) {
-            drawForkForIndex(g, centerX, centerY, tableRadius, angleStep, i, plateDistanceFromCenter);
+            drawForkForIndex(
+                    g,
+                    centerX,
+                    centerY,
+                    tableRadius,
+                    angleStep,
+                    i,
+                    plateDistanceFromCenter
+            );
         }
 
         drawLegend(g);
@@ -165,11 +185,25 @@ public class DiningTable {
         g.drawOval(headX, headY, PHILOSOPHER_HEAD_SIZE, PHILOSOPHER_HEAD_SIZE);
 
         g.setColor(philosopherColor);
-        g.fillRoundRect(bodyX, bodyY, PHILOSOPHER_BODY_WIDTH, PHILOSOPHER_BODY_HEIGHT, 12, 12);
+        g.fillRoundRect(
+                bodyX,
+                bodyY,
+                PHILOSOPHER_BODY_WIDTH,
+                PHILOSOPHER_BODY_HEIGHT,
+                12,
+                12
+        );
 
         g.setColor(getStateColor(state));
         g.setStroke(new BasicStroke(3));
-        g.drawRoundRect(bodyX, bodyY, PHILOSOPHER_BODY_WIDTH, PHILOSOPHER_BODY_HEIGHT, 12, 12);
+        g.drawRoundRect(
+                bodyX,
+                bodyY,
+                PHILOSOPHER_BODY_WIDTH,
+                PHILOSOPHER_BODY_HEIGHT,
+                12,
+                12
+        );
 
         g.setColor(Color.BLACK);
         g.setFont(new Font("Arial", Font.BOLD, 12));
@@ -181,18 +215,6 @@ public class DiningTable {
         int textY = bodyY + 22;
 
         g.drawString(text, textX, textY);
-    }
-
-    private int calculatePlateSize() {
-        if (dinersCount <= 8) {
-            return LARGE_PLATE_SIZE;
-        }
-
-        if (dinersCount <= 14) {
-            return MEDIUM_PLATE_SIZE;
-        }
-
-        return SMALL_PLATE_SIZE;
     }
 
     private Color getForkColor(int forkOwner) {
@@ -208,16 +230,8 @@ public class DiningTable {
             return EATING_COLOR;
         }
 
-        if (state == PhilosopherState.WAITING_FOR_LEFT_FORK) {
-            return WAITING_COLOR;
-        }
-
-        if (state == PhilosopherState.WAITING_FOR_RIGHT_FORK) {
-            return new Color(210, 160, 0);
-        }
-
         if (state == PhilosopherState.WAITING_FOR_BOTH_FORKS) {
-            return new Color(200, 90, 0);
+            return WAITING_BOTH_COLOR;
         }
 
         if (state == PhilosopherState.STOPPED) {
@@ -229,12 +243,7 @@ public class DiningTable {
 
     private Color createPhilosopherColor(int index) {
         float hue = (index * GOLDEN_RATIO) % 1.0f;
-
-        return Color.getHSBColor(
-                hue,
-                PASTEL_SATURATION,
-                PASTEL_BRIGHTNESS
-        );
+        return Color.getHSBColor(hue, PASTEL_SATURATION, PASTEL_BRIGHTNESS);
     }
 
     private void drawTable(Graphics2D g, int x, int y, int size) {
@@ -258,12 +267,10 @@ public class DiningTable {
         g.setFont(new Font("Arial", Font.BOLD, 14));
 
         drawLegendItem(g, LEGEND_X, LEGEND_START_Y, THINKING_COLOR, "Thinking");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y, WAITING_COLOR, "Waiting left fork");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 2, new Color(210, 160, 0), "Waiting right fork");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 3, new Color(200, 90, 0), "Waiting both forks");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 4, EATING_COLOR, "Eating");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 5, FREE_FORK_COLOR, "Free fork");
-        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 6, STOPPED_COLOR, "Stopped");
+        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y, WAITING_BOTH_COLOR, "Waiting both forks");
+        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 2, EATING_COLOR, "Eating");
+        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 3, FREE_FORK_COLOR, "Free fork");
+        drawLegendItem(g, LEGEND_X, LEGEND_START_Y + LEGEND_GAP_Y * 4, STOPPED_COLOR, "Stopped");
     }
 
     private void drawLegendItem(Graphics2D g, int x, int y, Color color, String text) {

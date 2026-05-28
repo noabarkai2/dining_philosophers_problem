@@ -13,25 +13,41 @@ public class DiningPanel extends JPanel {
     }
 
     public void setDinersCount(int dinersCount) {
-        simulation.stop();
+        if (simulation != null) {
+            simulation.stop();
+        }
+
         startNewSimulation(dinersCount);
         repaint();
     }
 
-    public void stopOnePhilosopher(int philosopherNumber) {
-        simulation.stopOnePhilosopher(philosopherNumber);
+    public boolean stopOnePhilosopher(int philosopherNumber) {
+        if (simulation == null) {
+            return false;
+        }
+
+        boolean success = simulation.stopOnePhilosopher(philosopherNumber);
         repaint();
+
+        return success;
     }
 
-    public void addOneDiner() {
-        int newCount = simulation.getPhilosophersCount() + 1;
+    public boolean resumeOnePhilosopher(int philosopherNumber) {
+        if (simulation == null) {
+            return false;
+        }
 
-        simulation.stop();
-        startNewSimulation(newCount);
+        boolean success = simulation.resumeOnePhilosopher(philosopherNumber, this);
         repaint();
+
+        return success;
     }
 
     public int getDinersCount() {
+        if (simulation == null) {
+            return 0;
+        }
+
         return simulation.getPhilosophersCount();
     }
 
@@ -51,7 +67,8 @@ public class DiningPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        Graphics2D graphics2D = (Graphics2D) g;
-        diningTable.draw(graphics2D, getWidth(), getHeight());
+        if (diningTable != null) {
+            diningTable.draw((Graphics2D) g, getWidth(), getHeight());
+        }
     }
 }

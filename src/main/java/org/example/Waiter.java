@@ -1,255 +1,362 @@
 package org.example;
 
 public class Waiter {
-    private static final int FREE_FORK_OWNER = -1;
-    private static final int NO_SELECTED_PHILOSOPHER = -1;
-    private static final int MAX_MEALS_GAP = 1;
-
-    private boolean[] forksTaken;
-    private boolean[] waiting;
-    private boolean[] stopped;
-    private int[] mealsCount;
+    private boolean[] forks;
     private int[] forkOwners;
 
-    private int nextTurn;
-    private boolean active;
-    private DiningPanel diningPanel;
+    private int[] mealsCount;
+    private int[] serviceScore;
 
-    public Waiter(int philosophersCount, DiningPanel diningPanel) {
+    private boolean[] stopped;
+    private boolean[] waiting;
+    private boolean[] approvedToEat;
+
+    private int[] waitingOrder;
+    private int waitingCount;
+
+    private DiningPanel diningPanel;
+    private boolean active;
+
+    private static int FREE = -1;
+    private static int MAX_ALLOWED_GAP = 5;
+
+    public Waiter(int count, DiningPanel diningPanel) {
         this.diningPanel = diningPanel;
 
-        forksTaken = new boolean[philosophersCount];
-        waiting = new boolean[philosophersCount];
-        stopped = new boolean[philosophersCount];
-        mealsCount = new int[philosophersCount];
-        forkOwners = new int[philosophersCount];
+        forks = new boolean[count];
+        forkOwners = new int[count];
 
-        nextTurn = 0;
+        mealsCount = new int[count];
+        serviceScore = new int[count];
+
+        stopped = new boolean[count];
+        waiting = new boolean[count];
+        approvedToEat = new boolean[count];
+
+        waitingOrder = new int[count];
+        waitingCount = 0;
+
         active = true;
 
-        for (int i = 0; i < forkOwners.length; i++) {
-            forkOwners[i] = FREE_FORK_OWNER;
+        for (int i = 0; i < count; i++) {
+            forkOwners[i] = FREE;
         }
     }
 
-    public synchronized boolean askToEat(Philosopher philosopher) {
-        int philosopherId = philosopher.getPhilosopherId();
-
-        if (stopped[philosopherId]) {
+    public synchronized boolean takeForksAtomically(int id) {
+        if (!active || stopped[id]) {
             return false;
         }
 
-        waiting[philosopherId] = true;
-        updateWaitingState(philosopher);
+        waiting[id] = true;
+        addToWaitingOrder(id);
+
+        System.out.println("P" + (id + 1) + " waiting");
+
+        approveAllPossiblePhilosophers();
+
         updateScreen();
+        notifyAll();
 
         try {
-            while (active && !stopped[philosopherId] && findAllowedPhilosopher() != philosopherId) {
-                updateWaitingState(philosopher);
+            while (active && !stopped[id] && !approvedToEat[id]) {
                 wait();
             }
 
-            if (!active || stopped[philosopherId]) {
-                waiting[philosopherId] = false;
-                philosopher.setPhilosopherState(PhilosopherState.STOPPED);
+            if (!active || stopped[id]) {
+                waiting[id] = false;
+                approvedToEat[id] = false;
+                removeFromWaitingOrder(id);
+
                 updateScreen();
                 notifyAll();
+
                 return false;
             }
 
-            takeForks(philosopherId);
-
-            waiting[philosopherId] = false;
-            philosopher.setPhilosopherState(PhilosopherState.EATING);
-
-            nextTurn = (philosopherId + 1) % forksTaken.length;
-
-            updateScreen();
-            notifyAll();
+            approvedToEat[id] = false;
 
             return true;
 
         } catch (InterruptedException e) {
-            waiting[philosopherId] = false;
+            waiting[id] = false;
+            approvedToEat[id] = false;
+            removeFromWaitingOrder(id);
+
             updateScreen();
             notifyAll();
+
             return false;
         }
     }
 
-    public synchronized void finishEating(int philosopherId) {
-        releaseForks(philosopherId);
+    public synchronized void finishEating(int id) {
+        int leftFork = getLeftFork(id);
+        int rightFork = getRightFork(id);
 
-        if (!stopped[philosopherId]) {
-            mealsCount[philosopherId]++;
+        if (forkOwners[leftFork] == id) {
+            forks[leftFork] = false;
+            forkOwners[leftFork] = FREE;
         }
 
-        System.out.println(
-                "Philosopher " + philosopherId +
-                        " finished eating. Meals: " + mealsCount[philosopherId]
-        );
+        if (forkOwners[rightFork] == id) {
+            forks[rightFork] = false;
+            forkOwners[rightFork] = FREE;
+        }
+
+        if (!stopped[id] && active) {
+            mealsCount[id]++;
+            serviceScore[id]++;
+        }
+
+        System.out.println("P" + (id + 1) + " finished. Meals: " + mealsCount[id]);
+        printMeals();
+
+        approveAllPossiblePhilosophers();
 
         updateScreen();
         notifyAll();
     }
 
-    public synchronized void stopOnePhilosopher(int philosopherId) {
-        if (philosopherId < 0 || philosopherId >= stopped.length) {
-            return;
+    public synchronized boolean stopOnePhilosopher(int id) {
+        if (id < 0 || id >= stopped.length) {
+            return false;
         }
 
-        stopped[philosopherId] = true;
-        waiting[philosopherId] = false;
+        if (stopped[id]) {
+            return false;
+        }
 
-        System.out.println("Waiter stopped philosopher " + philosopherId);
+        stopped[id] = true;
+        waiting[id] = false;
+        approvedToEat[id] = false;
+        removeFromWaitingOrder(id);
+
+        int leftFork = getLeftFork(id);
+        int rightFork = getRightFork(id);
+
+        if (forkOwners[leftFork] == id) {
+            forks[leftFork] = false;
+            forkOwners[leftFork] = FREE;
+        }
+
+        if (forkOwners[rightFork] == id) {
+            forks[rightFork] = false;
+            forkOwners[rightFork] = FREE;
+        }
+
+        System.out.println("P" + (id + 1) + " stopped");
+        printMeals();
+
+        approveAllPossiblePhilosophers();
 
         updateScreen();
         notifyAll();
+
+        return true;
+    }
+
+    public synchronized boolean resumeOnePhilosopher(int id) {
+        if (id < 0 || id >= stopped.length) {
+            return false;
+        }
+
+        if (!stopped[id]) {
+            return false;
+        }
+
+        int averageScore = getAverageActiveServiceScore();
+
+        if (averageScore == -1) {
+            serviceScore[id] = mealsCount[id];
+        } else {
+            serviceScore[id] = averageScore;
+        }
+
+        stopped[id] = false;
+
+        System.out.println("P" + (id + 1) + " resumed. Meals stayed: " + mealsCount[id]);
+        printMeals();
+
+        approveAllPossiblePhilosophers();
+
+        updateScreen();
+        notifyAll();
+
+        return true;
     }
 
     public synchronized void stopWaiter() {
         active = false;
+
+        for (int i = 0; i < waiting.length; i++) {
+            waiting[i] = false;
+            approvedToEat[i] = false;
+        }
+
+        waitingCount = 0;
+
         System.out.println("Waiter stopped");
-        notifyAll();
+
         updateScreen();
+        notifyAll();
     }
 
-    private void updateWaitingState(Philosopher philosopher) {
-        int philosopherId = philosopher.getPhilosopherId();
+    private void approveAllPossiblePhilosophers() {
+        boolean approvedSomeone = true;
 
-        int leftFork = getLeftFork(philosopherId);
-        int rightFork = getRightFork(philosopherId);
+        while (approvedSomeone) {
+            approvedSomeone = false;
 
-        boolean leftForkFree = !forksTaken[leftFork];
-        boolean rightForkFree = !forksTaken[rightFork];
+            for (int i = 0; i < waitingCount; i++) {
+                int id = waitingOrder[i];
 
-        if (!leftForkFree && !rightForkFree) {
-            philosopher.setPhilosopherState(PhilosopherState.WAITING_FOR_BOTH_FORKS);
-            return;
+                if (stopped[id]) {
+                    continue;
+                }
+
+                if (!waiting[id]) {
+                    continue;
+                }
+
+                if (!areForksFree(id)) {
+                    continue;
+                }
+
+                if (hasWaitingPhilosopherFarBehindWhoCanEat(id)) {
+                    continue;
+                }
+
+                approvePhilosopher(id);
+                removeFromWaitingOrder(id);
+                approvedSomeone = true;
+                break;
+            }
         }
-
-        if (!leftForkFree) {
-            philosopher.setPhilosopherState(PhilosopherState.WAITING_FOR_LEFT_FORK);
-            return;
-        }
-
-        if (!rightForkFree) {
-            philosopher.setPhilosopherState(PhilosopherState.WAITING_FOR_RIGHT_FORK);
-            return;
-        }
-
-        philosopher.setPhilosopherState(PhilosopherState.WAITING_FOR_BOTH_FORKS);
     }
 
-    private int findAllowedPhilosopher() {
-        int selectedPhilosopher = findAllowedPhilosopherWithMealGap();
+    private void approvePhilosopher(int id) {
+        int leftFork = getLeftFork(id);
+        int rightFork = getRightFork(id);
 
-        if (selectedPhilosopher != NO_SELECTED_PHILOSOPHER) {
-            return selectedPhilosopher;
-        }
+        forks[leftFork] = true;
+        forks[rightFork] = true;
 
-        return findAllowedPhilosopherWithoutMealGap();
+        forkOwners[leftFork] = id;
+        forkOwners[rightFork] = id;
+
+        waiting[id] = false;
+        approvedToEat[id] = true;
+
+        System.out.println(
+                "P" + (id + 1) +
+                        " eating with forks " + leftFork + " and " + rightFork
+        );
     }
 
-    private int findAllowedPhilosopherWithMealGap() {
-        int selectedPhilosopher = NO_SELECTED_PHILOSOPHER;
-        int lowestWaitingMeals = getLowestWaitingMeals();
+    private boolean hasWaitingPhilosopherFarBehindWhoCanEat(int id) {
+        for (int i = 0; i < waitingCount; i++) {
+            int otherId = waitingOrder[i];
 
-        for (int i = 0; i < waiting.length; i++) {
-            int philosopherId = (nextTurn + i) % waiting.length;
+            if (otherId == id) {
+                continue;
+            }
 
-            if (canEatNow(philosopherId)
-                    && mealsCount[philosopherId] <= lowestWaitingMeals + MAX_MEALS_GAP) {
-                selectedPhilosopher = chooseBetterPhilosopher(selectedPhilosopher, philosopherId);
+            if (stopped[otherId]) {
+                continue;
+            }
+
+            if (!waiting[otherId]) {
+                continue;
+            }
+
+            if (!areForksFree(otherId)) {
+                continue;
+            }
+
+            if (serviceScore[id] > serviceScore[otherId] + MAX_ALLOWED_GAP) {
+                return true;
             }
         }
 
-        return selectedPhilosopher;
+        return false;
     }
 
-    private int findAllowedPhilosopherWithoutMealGap() {
-        int selectedPhilosopher = NO_SELECTED_PHILOSOPHER;
+    private void addToWaitingOrder(int id) {
+        if (isInWaitingOrder(id)) {
+            return;
+        }
 
-        for (int i = 0; i < waiting.length; i++) {
-            int philosopherId = (nextTurn + i) % waiting.length;
+        waitingOrder[waitingCount] = id;
+        waitingCount++;
+    }
 
-            if (canEatNow(philosopherId)) {
-                selectedPhilosopher = chooseBetterPhilosopher(selectedPhilosopher, philosopherId);
+    private void removeFromWaitingOrder(int id) {
+        int index = -1;
+
+        for (int i = 0; i < waitingCount; i++) {
+            if (waitingOrder[i] == id) {
+                index = i;
+                break;
             }
         }
 
-        return selectedPhilosopher;
-    }
-
-    private int chooseBetterPhilosopher(int currentSelected, int candidate) {
-        if (currentSelected == NO_SELECTED_PHILOSOPHER) {
-            return candidate;
+        if (index == -1) {
+            return;
         }
 
-        if (mealsCount[candidate] < mealsCount[currentSelected]) {
-            return candidate;
+        for (int i = index; i < waitingCount - 1; i++) {
+            waitingOrder[i] = waitingOrder[i + 1];
         }
 
-        return currentSelected;
+        waitingCount--;
     }
 
-    private boolean canEatNow(int philosopherId) {
-        return !stopped[philosopherId]
-                && waiting[philosopherId]
-                && areForksFree(philosopherId);
-    }
-
-    private int getLowestWaitingMeals() {
-        int lowest = Integer.MAX_VALUE;
-
-        for (int i = 0; i < waiting.length; i++) {
-            if (!stopped[i] && waiting[i] && mealsCount[i] < lowest) {
-                lowest = mealsCount[i];
+    private boolean isInWaitingOrder(int id) {
+        for (int i = 0; i < waitingCount; i++) {
+            if (waitingOrder[i] == id) {
+                return true;
             }
         }
 
-        return lowest;
+        return false;
     }
 
-    private void takeForks(int philosopherId) {
-        int leftFork = getLeftFork(philosopherId);
-        int rightFork = getRightFork(philosopherId);
+    private int getAverageActiveServiceScore() {
+        int sum = 0;
+        int count = 0;
 
-        forksTaken[leftFork] = true;
-        forksTaken[rightFork] = true;
+        for (int i = 0; i < serviceScore.length; i++) {
+            if (!stopped[i]) {
+                sum += serviceScore[i];
+                count++;
+            }
+        }
 
-        forkOwners[leftFork] = philosopherId;
-        forkOwners[rightFork] = philosopherId;
+        if (count == 0) {
+            return -1;
+        }
+
+        return sum / count;
     }
 
-    private void releaseForks(int philosopherId) {
-        int leftFork = getLeftFork(philosopherId);
-        int rightFork = getRightFork(philosopherId);
+    private boolean areForksFree(int id) {
+        int leftFork = getLeftFork(id);
+        int rightFork = getRightFork(id);
 
-        forksTaken[leftFork] = false;
-        forksTaken[rightFork] = false;
-
-        forkOwners[leftFork] = FREE_FORK_OWNER;
-        forkOwners[rightFork] = FREE_FORK_OWNER;
+        return !forks[leftFork] && !forks[rightFork];
     }
 
-    private boolean areForksFree(int philosopherId) {
-        int leftFork = getLeftFork(philosopherId);
-        int rightFork = getRightFork(philosopherId);
-
-        return !forksTaken[leftFork] && !forksTaken[rightFork];
+    private int getLeftFork(int id) {
+        return (id - 1 + forks.length) % forks.length;
     }
 
-    private int getLeftFork(int philosopherId) {
-        return (philosopherId - 1 + forksTaken.length) % forksTaken.length;
+    private int getRightFork(int id) {
+        return id;
     }
 
-    private int getRightFork(int philosopherId) {
-        return philosopherId;
-    }
-
-    public synchronized int getMealsCount(int philosopherId) {
-        return mealsCount[philosopherId];
+    public synchronized int getMealsCount(int id) {
+        return mealsCount[id];
     }
 
     public synchronized int getForkOwner(int forkId) {
@@ -257,6 +364,18 @@ public class Waiter {
     }
 
     private void updateScreen() {
-        diningPanel.updateScreen();
+        if (diningPanel != null) {
+            diningPanel.updateScreen();
+        }
+    }
+
+    private void printMeals() {
+        System.out.print("Meals: ");
+
+        for (int i = 0; i < mealsCount.length; i++) {
+            System.out.print("P" + (i + 1) + "=" + mealsCount[i] + " ");
+        }
+
+        System.out.println();
     }
 }
