@@ -74,8 +74,11 @@ public class Plate {
         if (state == PhilosopherState.EATING) {
             return "Eating";
         }
-        if (state == PhilosopherState.WAITING_FOR_BOTH_FORKS) {
-            return "Waiting both";
+        if (state == PhilosopherState.WAITING_FOR_FIRST_FORK) {
+            return "Wait 1st";
+        }
+        if (state == PhilosopherState.WAITING_FOR_SECOND_FORK) {
+            return "Wait 2nd";
         }
         if (state == PhilosopherState.STOPPED) {
             return "Stopped";
@@ -87,7 +90,10 @@ public class Plate {
         if (state == PhilosopherState.EATING) {
             return new Color(0, 150, 70);
         }
-        if (state == PhilosopherState.WAITING_FOR_BOTH_FORKS) {
+        if (state == PhilosopherState.WAITING_FOR_FIRST_FORK) {
+            return new Color(200, 150, 0);
+        }
+        if (state == PhilosopherState.WAITING_FOR_SECOND_FORK) {
             return new Color(200, 90, 0);
         }
         if (state == PhilosopherState.STOPPED) {
