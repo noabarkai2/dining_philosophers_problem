@@ -1,14 +1,13 @@
 package org.example;
 
 public class Waiter {
+    private static final int FREE = -1;
     private boolean[] forks;
     private int[] forkOwners;
     private int[] mealsCount;
     private boolean[] stopped;
     private DiningPanel diningPanel;
     private boolean active;
-
-    private static int FREE = -1;
 
     public Waiter(int count, DiningPanel diningPanel) {
         this.diningPanel = diningPanel;

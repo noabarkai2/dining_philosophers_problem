@@ -6,12 +6,12 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 public class Main {
-    public static int WINDOW_WIDTH = 980;
-    public static int WINDOW_HEIGHT = 760;
+    public static final int WINDOW_WIDTH = 980;
+    public static final int WINDOW_HEIGHT = 760;
 
-    private static int MIN_DINERS = 2;
-    private static int START_DINERS = 5;
-    private static int MAX_DINERS = START_DINERS + 2;
+    private static final int MIN_DINERS = 2;
+    private static final int START_DINERS = 5;
+    private static final int MAX_DINERS = START_DINERS + 2;
 
     public static void main(String[] args) {
         JFrame window = new JFrame("בעיית הפילוסופים הסועדים");

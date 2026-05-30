@@ -78,7 +78,7 @@ public class Philosopher implements Runnable {
     private void eat() {
         setPhilosopherState(PhilosopherState.EATING);
         waiter.finishEating(id);
-        Utils.sleepRandom(500, 1500);
+        Utils.sleepRandom(0, 1000);
     }
 
     public synchronized void stopPhilosopher() {
